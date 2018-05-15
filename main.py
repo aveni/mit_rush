@@ -3,16 +3,16 @@ import random
 import numpy as np
 import sys
 
-NUM_STUDENTS = 100 
+NUM_STUDENTS = 100
 NUM_FRATS = 5
 NUM_SWAPS= 20
-STRATEGY = "gale"
+STRATEGY = "gale-smart"
 CAPACITY_MEAN = 20 #11.88 for real
-CAPACITY_VARIANCE = 2
-FRAT_DIVISIONS = 1 
+CAPACITY_VARIANCE = 5
+FRAT_DIVISIONS = 1
 STUDENT_DIVISIONS = 1
 
-FRAT_CUTOFF_MEAN = 5
+FRAT_CUTOFF_MEAN = 10
 FRAT_CUTOFF_VAR = 1
 
 def generate_rush_params():
@@ -48,7 +48,7 @@ def generate_toy_example():
 	s1 = Student("S1", [])
 	s2 = Student("S2", [])
 
-	f0 = Frat("F0", 2, [s0, s2, s1])
+	f0 = Frat("F0", 2, [s0, s2])
 	f1 = Frat("F1", 2, [s2, s1, s0])
 
 	s0.acceptable = [f1, f0]
@@ -56,30 +56,38 @@ def generate_toy_example():
 	s2.acceptable = [f0, f1]
 
 	frats = [f0, f1]
-	strategies = {f0:"gale", f1:"top"}
+	strategies = {f0:"gale-smart", f1:"gale-smart"}
 	students = [s0, s1, s2]
 	return frats, students, strategies
 
 def main():
 	frats, students, strategies = generate_rush_params() #RUN LARGER EXAMPLE
 	# frats, students, strategies = generate_toy_example() #RUN TOY EXAMPLE
-	rush_no_swaps = Rush(frats, students, num_swaps=0, strategies=strategies)
-	no_swap_outcomes = rush_no_swaps.get_gale_shapley(reset=True)
-	rush = Rush(frats, students, num_swaps=NUM_SWAPS, strategies=strategies)
-	print "BEFORE RUSH"
-	print rush
-	rush.apply_swaps()
-	rush.bid_and_pledge()
-	print "\nAFTER RUSH"
-	print rush
-	generate_metrics(rush, no_swap_outcomes)
+
+	for strat in ["top", "gale", "gale-smart"]:
+		strategies = {}
+		for f in frats:
+			strategies[f] = strat
+		print "STRAT=%s" % strat
+		rush_no_swaps = Rush(frats, students, num_swaps=0, strategies=strategies)
+		no_swap_outcomes = rush_no_swaps.get_gale_shapley(reset=True)
+		rush = Rush(frats, students, num_swaps=NUM_SWAPS, strategies=strategies)
+		print "BEFORE RUSH"
+		print rush
+		rush.apply_swaps()
+		rush.bid_and_pledge()
+		print "\nAFTER RUSH"
+		print rush
+		generate_metrics(rush, no_swap_outcomes)
 
 def generate_metrics(rush, no_swap_outcomes):
 	print("----------------\nMETRICS\n----------------\n")
 	total_num_pledges = 0
+	total_num_swaps = 0
 	for f in rush.frats:
 		num_pledges = len(f.pledges)
 		total_num_pledges += len(f.pledges)
+		total_num_swaps += len(rush.swap_dict[f])
 		ranks = []
 		no_swap_ranks = []
 		pledge_overlap = 0
@@ -99,7 +107,9 @@ def generate_metrics(rush, no_swap_outcomes):
 		print("Average No Swap Ranking of Matched Students: " + str(np.mean(no_swap_ranks)))
 		print("Average Ranking of Matched Students: " + str(np.mean(ranks)))
 		print("Number of Swaps Used: " + str(len(rush.swap_dict[f])))
+	print("Total Number of Swaps Used: ") + str(total_num_swaps)
 	print("Total Number of Students Matched: " + str(total_num_pledges))
+
 
 if __name__ == "__main__":
 	main()
