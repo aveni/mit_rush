@@ -59,7 +59,7 @@ class Rush:
 				if (len(f.pledges) < f.capacity) and counter[f] < len(f.acceptable):
 					finished = False
 					proposal = f.acceptable[counter[f]]
-					if (proposal.frat is None) or (proposal.acceptable.index(f) < proposal.acceptable.index(proposal.frat)):
+					if (f in proposal.acceptable and ((proposal.frat is None) or (proposal.acceptable.index(f) < proposal.acceptable.index(proposal.frat)))):
 						if proposal.frat:
 							proposal.frat.pledges.remove(proposal)
 						proposal.frat = f
@@ -84,29 +84,29 @@ class Rush:
 		self.get_gale_shapley(reset=False)
 
 	def apply_swaps(self):
-		swap_dict = {}
+		self.swap_dict = {}
 		for f in self.frats:
 			strat = self.strategies[f]
 			if strat == "top":
-				swap_dict[f] = self.get_swap_top(f)
+				self.swap_dict[f] = self.get_swap_top(f)
 			if strat == "gale":
-				swap_dict[f] = self.get_swap_gale_shapley(f)
+				self.swap_dict[f] = self.get_swap_gale_shapley(f)
 
 		print "SWAPS"
 		for f in self.frats:
-			print f.name, [s.name for s in swap_dict[f]]
+			print f.name, [s.name for s in self.swap_dict[f]]
 
 		# In-order swapping means outcome is deterministic
 		# Equivalent to adding 1+epsilon utility to a frat who performs a swap
 		for s in self.students:
 			new_acceptable = s.acceptable[:]
 			for i in range (1, len(s.acceptable)):
-				if s in swap_dict[s.acceptable[i]]:
+				if s in self.swap_dict[s.acceptable[i]]:
 					ix = new_acceptable.index(s.acceptable[i])
 					temp = new_acceptable[ix-1]
 					new_acceptable[ix-1] = new_acceptable[ix]
 					new_acceptable[ix] = temp
-			if s in swap_dict[s.acceptable[0]]:
+			if s in self.swap_dict[s.acceptable[0]]:
 				new_acceptable.remove(s.acceptable[0])
 				new_acceptable = [s.acceptable[0]] + new_acceptable
 			s.acceptable = new_acceptable
