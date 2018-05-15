@@ -91,6 +91,9 @@ class Rush:
 				self.swap_dict[f] = self.get_swap_top(f)
 			if strat == "gale":
 				self.swap_dict[f] = self.get_swap_gale_shapley(f)
+			if strat == "gale-smart":
+				self.swap_dict[f] = self.get_swap_smart_gale_shapley(f)
+
 
 		print "SWAPS"
 		for f in self.frats:
@@ -117,6 +120,15 @@ class Rush:
 	def get_swap_gale_shapley(self, frat):
 		return self.get_gale_shapley()[frat][:self.num_swaps]
 
+	def get_swap_smart_gale_shapley(self, frat):
+		gs = self.get_gale_shapley()[frat][:self.num_swaps]
+		for pledge in gs:
+			ix = pledge.acceptable.index(frat)
+			if ix != len(pledge.acceptable)-1:
+				if pledge not in pledge.acceptable[ix+1].acceptable:
+					print "%s auto receives %s" % (frat.name, pledge.name)
+					gs.remove(pledge)
+		return gs
 
 	def __repr__(self):
 		string = ""
