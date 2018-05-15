@@ -126,7 +126,6 @@ class Rush:
 			ix = pledge.acceptable.index(frat)
 			if ix != len(pledge.acceptable)-1:
 				if pledge not in pledge.acceptable[ix+1].acceptable:
-					print "%s auto receives %s" % (frat.name, pledge.name)
 					gs.remove(pledge)
 		return gs
 
